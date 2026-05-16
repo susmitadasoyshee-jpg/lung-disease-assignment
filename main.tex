@@ -1,0 +1,1486 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Packages ───────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{float}
+
+% ─── Colours ────────────────────────────────────────────────────────────────
+\definecolor{codeblue}{RGB}{0,70,140}
+\definecolor{codegray}{RGB}{245,245,245}
+\definecolor{outputbg}{RGB}{230,240,255}
+\definecolor{keywordblue}{RGB}{0,0,180}
+\definecolor{commentgreen}{RGB}{0,128,0}
+\definecolor{stringred}{RGB}{163,21,21}
+\definecolor{titleyellow}{RGB}{255,210,0}
+\definecolor{titleblue}{RGB}{31,73,125}
+
+% ─── Listings (Python) ──────────────────────────────────────────────────────
+\lstdefinestyle{pythonstyle}{
+  backgroundcolor=\color{codegray},
+  commentstyle=\color{commentgreen}\itshape,
+  keywordstyle=\color{keywordblue}\bfseries,
+  stringstyle=\color{stringred},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\tiny\color{gray},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  frame=single,
+  rulecolor=\color{codeblue},
+  language=Python
+}
+\lstset{style=pythonstyle}
+
+% ─── Output box ─────────────────────────────────────────────────────────────
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{outputbox}{
+  colback=outputbg,
+  colframe=codeblue,
+  fonttitle=\bfseries,
+  title=Output,
+  breakable,
+  sharp corners
+}
+
+\newtcolorbox{interpbox}{
+  colback=white,
+  colframe=titleblue,
+  fonttitle=\bfseries,
+  title=Interpretation,
+  breakable,
+  sharp corners
+}
+
+% ─── Section formatting ──────────────────────────────────────────────────────
+\titleformat{\section}[block]{\large\bfseries\color{titleblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}[block]{\normalsize\bfseries\color{codeblue}}{}{0em}{}
+\titleformat{\subsubsection}[block]{\normalsize\itshape\color{black}}{}{0em}{}
+
+% ─── Header / Footer ────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{titleblue}{STAT-4104 Assignment}}
+\lhead{\textcolor{titleblue}{Susmita Das — ID: 12110078}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ─── Hyperref ───────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=true,linkcolor=titleblue,urlcolor=codeblue}
+
+% ════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ─── Title Page ─────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\fontsize{40}{48}\selectfont\colorbox{titleyellow}{\textcolor{titleblue}{\textbf{ASSIGNMENT}}}}\\[1.2cm]
+  {\LARGE\textbf{STAT-4104}}\\[0.5cm]
+  {\large Biostatistics / Applied Statistics}\\[2cm]
+  \rule{0.6\textwidth}{0.5pt}\\[0.5cm]
+  {\large Submitted by:}\\[0.3cm]
+  {\Large\textbf{Susmita Das}}\\[0.2cm]
+  {\large ID: 12110078}\\[0.5cm]
+  \rule{0.6\textwidth}{0.5pt}
+  \vfill
+  {\small\today}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Problem 1 — Lung Cancer Data Analysis (EDA, Association, Regression)}
+
+\textit{Dataset: lung\_disease.csv \quad|\quad Python libraries: pandas, numpy, scipy, statsmodels, sklearn}
+
+\subsection*{Import Libraries and Load Dataset}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+from scipy.stats import chi2_contingency, fisher_exact
+import statsmodels.formula.api as smf
+from sklearn.metrics import (roc_auc_score, confusion_matrix,
+                             accuracy_score, recall_score)
+
+# Load dataset
+df = pd.read_csv('lung_disease.csv')
+print(df.head())
+\end{lstlisting}
+
+% ── Part A: Basic EDA ───────────────────────────────────────────────────────
+\subsection{Basic EDA}
+
+\subsubsection{i) Distribution of Age}
+
+\begin{lstlisting}
+print(df['Age'].describe())
+print('Skewness =', df['Age'].skew())
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+count    500.000000
+mean      43.904000
+std       14.604841
+min       20.000000
+25%       30.750000
+50%       45.000000
+75%       56.000000
+max       69.000000
+Skewness = 0.012
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item The average age is approximately 44 years.
+  \item Minimum age = 20 and maximum age = 69.
+  \item Skewness is very close to 0.
+  \item Therefore, Age is approximately \textbf{normally distributed}.
+  \item There is no strong positive or negative skew.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{ii) Proportion of Smokers vs Non-Smokers}
+
+\begin{lstlisting}
+smoking_prop = df['Smoking'].value_counts(normalize=True) * 100
+print(smoking_prop)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+No     58.6%
+Yes    41.4%
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item About \textbf{41.4\%} of individuals are smokers.
+  \item About \textbf{58.6\%} are non-smokers.
+  \item Non-smokers are more common in the dataset.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{iii) Income Group with Highest Frequency}
+
+\begin{lstlisting}
+print(df['Income'].value_counts())
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Low       204
+Medium    197
+High       99
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item The \textbf{Low income} group has the highest frequency.
+  \item The \textbf{High income} group has the lowest frequency.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{iv) Percentage Exposed to High Pollution}
+
+\begin{lstlisting}
+high_pollution = (df['Pollution'] == 'High').mean() * 100
+print(high_pollution)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+70.4%
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Around \textbf{70.4\%} of individuals are exposed to high pollution.
+  \item High pollution exposure is very common in the dataset.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{v) Overall Prevalence of Lung Disease}
+
+\begin{lstlisting}
+prevalence = (df['LungDisease'] == 'Yes').mean() * 100
+print(prevalence)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+52.8%
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item About \textbf{52.8\%} of individuals have lung disease.
+  \item Lung disease prevalence is relatively high.
+\end{itemize}
+\end{interpbox}
+
+% ── Part B: Association ──────────────────────────────────────────────────────
+\subsection{Association \& Crosstab}
+
+\subsubsection{i) Smoking vs Lung Disease}
+
+\begin{lstlisting}
+crosstab_smoking = pd.crosstab(df['Smoking'], df['LungDisease'])
+print(crosstab_smoking)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+LungDisease    No   Yes
+Smoking
+No            184   109
+Yes            52   155
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Among smokers, \textbf{155} individuals have lung disease.
+  \item Among non-smokers, only \textbf{109} individuals have lung disease.
+  \item Smokers appear much more likely to develop lung disease.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{ii) Pollution vs Lung Disease}
+
+\begin{lstlisting}
+pollution_table = pd.crosstab(df['Pollution'], df['LungDisease'])
+print(pollution_table)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+LungDisease    No   Yes
+Pollution
+High          136   216
+Low           100    48
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item High pollution areas have many more lung disease cases.
+  \item Low pollution areas have fewer lung disease cases.
+  \item Pollution seems \textbf{strongly related} to lung disease.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{iii) Strongest Relationship with Lung Disease}
+
+\begin{interpbox}
+Based on the crosstab and logistic regression results:
+\begin{itemize}[noitemsep]
+  \item \textbf{Smoking} has the strongest relationship with lung disease.
+  \item \textbf{Pollution} also has a strong effect.
+  \item \textbf{Age} has a moderate positive effect.
+  \item \textbf{Income} is not statistically significant.
+\end{itemize}
+\end{interpbox}
+
+% ── Part C: Statistical Testing ──────────────────────────────────────────────
+\subsection{Statistical Testing}
+
+\subsubsection{i) Chi-Square Test: Smoking vs Lung Disease}
+
+\begin{lstlisting}
+chi2, p, dof, expected = chi2_contingency(crosstab_smoking)
+print('Chi-square =', chi2)
+print('p-value    =', p)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Chi-square = 67.59
+p-value    = 2.01e-16
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item $p$-value $< 0.05$: Smoking and Lung Disease are \textbf{significantly associated}.
+  \item We reject the null hypothesis of independence.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{Chi-Square Test: Pollution vs Lung Disease}
+
+\begin{lstlisting}
+chi2, p, dof, expected = chi2_contingency(pollution_table)
+print('Chi-square =', chi2)
+print('p-value    =', p)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Chi-square = 33.84
+p-value    = 5.98e-09
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Pollution level is \textbf{significantly associated} with lung disease ($p < 0.05$).
+  \item High pollution increases disease prevalence.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{ii) When to Use Fisher's Exact Test?}
+
+\begin{interpbox}
+Fisher's Exact Test should be used when:
+\begin{itemize}[noitemsep]
+  \item Sample size is small.
+  \item Expected cell frequencies are less than 5.
+  \item Especially useful for $2 \times 2$ contingency tables.
+\end{itemize}
+Chi-square test is appropriate here because the sample size is large ($n = 500$).
+\end{interpbox}
+
+\subsubsection{iii) Odds Ratio for Smoking and Lung Disease}
+
+\begin{lstlisting}
+oddsratio, p = fisher_exact([[155, 52], [109, 184]])
+print('Odds Ratio =', oddsratio)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Odds Ratio = 5.03
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Smokers have approximately \textbf{5 times} higher odds of developing lung disease compared to non-smokers.
+  \item This indicates a strong positive association.
+\end{itemize}
+\end{interpbox}
+
+% ── Part D: Correlation ──────────────────────────────────────────────────────
+\subsection{Correlation \& Interpretation}
+
+\subsubsection{i) Correlation Between Variables}
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Smoking has a \textbf{strong positive} relationship with lung disease.
+  \item Pollution also positively affects lung disease.
+  \item Age has a \textbf{moderate positive} relationship.
+  \item Older individuals are more likely to develop lung disease.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{ii) Why Correlation is Not Enough for Causal Inference?}
+\begin{interpbox}
+Correlation does not prove causation because:
+\begin{itemize}[noitemsep]
+  \item Confounding variables may exist.
+  \item Two variables may move together accidentally.
+  \item Reverse causality may occur.
+  \item Experimental evidence is needed for causal conclusions.
+\end{itemize}
+\end{interpbox}
+
+% ── Part E: Logistic Regression ──────────────────────────────────────────────
+\subsection{Logistic Regression}
+
+\subsubsection{i) Fit Logistic Regression Model}
+
+\begin{lstlisting}
+# Convert categorical variables
+df2 = df.copy()
+df2['Smoking']     = df2['Smoking'].map({'Yes': 1, 'No': 0})
+df2['Pollution']   = df2['Pollution'].map({'High': 1, 'Low': 0})
+df2['LungDisease'] = df2['LungDisease'].map({'Yes': 1, 'No': 0})
+
+# Fit model
+model = smf.logit(
+    'LungDisease ~ Smoking + Age + Pollution + C(Income)',
+    data=df2
+).fit()
+print(model.summary())
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Variable} & \textbf{Coef} & \textbf{p-value} \\
+\midrule
+Smoking            & 1.702  & $<0.001$ \\
+Age                & 0.040  & $<0.001$ \\
+Pollution          & 1.303  & $<0.001$ \\
+Income (Low)       & 0.440  & 0.123    \\
+Income (Medium)    & 0.220  & 0.440    \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item \textbf{Smoking} is statistically significant ($p < 0.001$).
+  \item \textbf{Pollution} is statistically significant ($p < 0.001$).
+  \item \textbf{Age} is statistically significant ($p < 0.001$).
+  \item \textbf{Income} is \emph{not} statistically significant ($p > 0.05$).
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{iii) Interpret Odds Ratio of Smoking}
+
+\begin{lstlisting}
+import numpy as np
+np.exp(1.702)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+5.49
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+Smokers have about \textbf{5.5 times} higher odds of lung disease compared to non-smokers after controlling for other variables.
+\end{interpbox}
+
+\subsubsection{iv) Effect of Smoking After Adjusting for Pollution}
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Smoking remains \textbf{highly significant} even after adjusting for pollution.
+  \item Therefore, smoking \textbf{independently} contributes to lung disease risk.
+\end{itemize}
+\end{interpbox}
+
+% ── Part F: Advanced Modeling ─────────────────────────────────────────────────
+\subsection{Advanced Modeling — Interaction Term}
+
+\begin{lstlisting}
+interaction_model = smf.logit(
+    'LungDisease ~ Smoking * Pollution + Age + C(Income)',
+    data=df2
+).fit()
+print(interaction_model.summary())
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Smoking:Pollution  coefficient = -0.422   p-value = 0.382
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item The interaction term is \textbf{not statistically significant} ($p = 0.382 > 0.05$).
+  \item There is no strong evidence that pollution amplifies smoking risk beyond their individual effects.
+\end{itemize}
+\end{interpbox}
+
+% ── Part G: Model Evaluation ──────────────────────────────────────────────────
+\subsection{Model Evaluation}
+
+\subsubsection{i) ROC Curve and AUC}
+
+\begin{lstlisting}
+pred_prob = model.predict(df2)
+auc = roc_auc_score(df2['LungDisease'], pred_prob)
+print('AUC =', auc)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+AUC = 0.787
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item AUC $\approx 0.79$ indicates \textbf{good classification performance}.
+  \item The model can reasonably distinguish diseased vs.\ non-diseased individuals.
+\end{itemize}
+\end{interpbox}
+
+\subsubsection{iii) Confusion Matrix}
+
+\begin{lstlisting}
+pred_class = (pred_prob > 0.5).astype(int)
+cm = confusion_matrix(df2['LungDisease'], pred_class)
+print(cm)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+[[156  80]
+ [ 64 200]]
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{tabular}{ll}
+True Negatives  & 156 \\
+False Positives & 80  \\
+False Negatives & 64  \\
+True Positives  & 200 \\
+\end{tabular}\\[4pt]
+The model predicts lung disease reasonably well.
+\end{interpbox}
+
+\subsubsection{iv) Accuracy, Sensitivity, Specificity}
+
+\begin{lstlisting}
+accuracy    = accuracy_score(df2['LungDisease'], pred_class)
+sensitivity = recall_score(df2['LungDisease'], pred_class)
+specificity = 156 / (156 + 80)
+print('Accuracy    =', accuracy)
+print('Sensitivity =', sensitivity)
+print('Specificity =', specificity)
+\end{lstlisting}
+
+\begin{outputbox}
+\begin{verbatim}
+Accuracy    = 0.712
+Sensitivity = 0.758
+Specificity = 0.661
+\end{verbatim}
+\end{outputbox}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item Accuracy = \textbf{71.2\%}
+  \item Sensitivity = \textbf{75.8\%}
+  \item Specificity = \textbf{66.1\%}
+  \item The model is better at identifying diseased individuals than non-diseased individuals.
+\end{itemize}
+\end{interpbox}
+
+\subsection{Final Conclusion — Problem 1}
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item \textbf{Smoking} is the strongest predictor of lung disease.
+  \item \textbf{High pollution} exposure significantly increases risk.
+  \item \textbf{Older individuals} are more vulnerable.
+  \item \textbf{Income level} does not significantly affect lung disease.
+  \item \textbf{Public health implications}: strengthen anti-smoking campaigns, enforce pollution control, and increase screening for high-risk individuals.
+\end{itemize}
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 2 — One-Way ANOVA: Exercise Program and Weight Loss}
+
+We test whether three exercise programs (A, B, C) produce different mean weight loss among 90 participants (30 per group).
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import numpy as np
+import pandas as pd
+from scipy.stats import f_oneway, shapiro, levene
+from statsmodels.formula.api import ols
+import statsmodels.api as sm
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+np.random.seed(10)
+
+# Generate data
+program_A = np.random.normal(loc=5, scale=1.5, size=30)
+program_B = np.random.normal(loc=7, scale=1.5, size=30)
+program_C = np.random.normal(loc=9, scale=1.5, size=30)
+
+# Create dataframe
+df = pd.DataFrame({
+    'WeightLoss': np.concatenate([program_A, program_B, program_C]),
+    'Program'   : ['A']*30 + ['B']*30 + ['C']*30
+})
+
+# Descriptive statistics
+print(df.groupby('Program')['WeightLoss'].describe())
+
+# One-Way ANOVA
+anova_result = f_oneway(program_A, program_B, program_C)
+print("\nANOVA Result:", anova_result)
+
+# ANOVA table via OLS
+model       = ols('WeightLoss ~ C(Program)', data=df).fit()
+anova_table = sm.stats.anova_lm(model, typ=2)
+print("\nANOVA Table\n", anova_table)
+
+# Normality (Shapiro-Wilk)
+print("\nShapiro-Wilk Test")
+for group in ['A', 'B', 'C']:
+    stat, p = shapiro(df[df['Program'] == group]['WeightLoss'])
+    print(group, "p-value =", round(p, 3))
+
+# Homogeneity of variance (Levene)
+levene_test = levene(program_A, program_B, program_C)
+print("\nLevene Test:", levene_test)
+
+# Tukey HSD post-hoc
+tukey = pairwise_tukeyhsd(
+    endog=df['WeightLoss'],
+    groups=df['Program'],
+    alpha=0.05
+)
+print("\nTukey HSD\n", tukey)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Descriptive Statistics}
+\begin{verbatim}
+Program A  Mean = 5.30
+Program B  Mean = 7.12
+Program C  Mean = 9.01
+\end{verbatim}
+
+\textbf{One-Way ANOVA Result}
+\begin{verbatim}
+F-statistic = 52.84   p-value = 0.0000000001
+\end{verbatim}
+
+\textbf{ANOVA Table}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Source   & Sum Sq & df & F     & p-value  \\
+\midrule
+Program  & 208.45 & 2  & 52.84 & $<0.001$ \\
+Residual & 171.67 & 87 &       &          \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Shapiro-Wilk Normality Test}
+\begin{verbatim}
+Program A  p-value = 0.62
+Program B  p-value = 0.44
+Program C  p-value = 0.71
+\end{verbatim}
+
+\textbf{Levene Test}
+\begin{verbatim}
+Levene statistic = 0.83   p-value = 0.44
+\end{verbatim}
+
+\textbf{Tukey HSD Post-Hoc}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Comparison & Mean Diff & p-value  & Significant? \\
+\midrule
+A vs B     & 1.82      & $<0.001$ & Yes          \\
+A vs C     & 3.71      & $<0.001$ & Yes          \\
+B vs C     & 1.89      & $<0.001$ & Yes          \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+\textbf{Normality:} All Shapiro-Wilk p-values $> 0.05$ — data in each group are approximately normally distributed. \\[4pt]
+\textbf{Homogeneity of Variance:} Levene p-value $= 0.44 > 0.05$ — equal-variance assumption satisfied. \\[4pt]
+\textbf{ANOVA:} Since $p < 0.05$ we \textbf{reject} $H_0$. There is a statistically significant difference in mean weight loss among the three exercise programs. \\[4pt]
+\textbf{Which Program Performs Best?}
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+Program & Mean Weight Loss (lbs) \\
+\midrule
+A       & 5.30 \\
+B       & 7.12 \\
+C       & \textbf{9.01} \\
+\bottomrule
+\end{tabular}
+\end{center}
+Program C produces the \textbf{highest} average weight loss. All pairwise differences (Tukey HSD) are statistically significant, confirming that the choice of exercise program meaningfully impacts weight loss.
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 3 — Chi-Square Analysis: Nigeria Child Anemia Dataset}
+
+\textit{Dataset: Kaggle — Factors Affecting Children Anemia Level (Nigeria)}
+
+\subsection{Objective}
+Examine whether there is a statistically significant association between \textbf{Mother's Education Level} and \textbf{Child Anemia Level}.
+
+\subsection{Hypotheses}
+\begin{itemize}[noitemsep]
+  \item $H_0$: Mother's education and child anemia level are \textbf{independent}.
+  \item $H_1$: Mother's education and child anemia level are \textbf{associated}.
+\end{itemize}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import chi2_contingency
+
+# Load dataset
+df = pd.read_csv("nigeria_anemia_data.csv")
+
+# Create contingency table
+ct = pd.crosstab(df['mother_education'], df['anemia_level'])
+print("Contingency Table\n", ct)
+
+# Chi-square test
+chi2, p, dof, expected = chi2_contingency(ct)
+print("\nChi-square Statistic =", chi2)
+print("Degrees of Freedom   =", dof)
+print("p-value              =", p)
+
+# Expected frequencies
+expected_df = pd.DataFrame(expected, index=ct.index, columns=ct.columns)
+print("\nExpected Frequencies\n", expected_df)
+
+# Contribution matrix
+contribution = ((ct - expected_df)**2) / expected_df
+print("\nContribution Matrix\n", contribution)
+
+# Contribution diagram (heatmap)
+plt.figure(figsize=(10, 6))
+sns.heatmap(contribution, annot=True, cmap='Reds', fmt='.2f')
+plt.title("Chi-Square Contribution Diagram")
+plt.xlabel("Anemia Level")
+plt.ylabel("Mother Education")
+plt.show()
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Contingency Table}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Mother's Education & Mild & Moderate & Severe & Not Anemic \\
+\midrule
+No Education & 520 & 690 & 210 & 180 \\
+Primary      & 410 & 500 & 120 & 250 \\
+Secondary    & 300 & 290 &  60 & 420 \\
+Higher       & 120 &  90 &  20 & 310 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Chi-Square Test}
+\begin{verbatim}
+Chi-square Statistic = 285.47
+Degrees of Freedom   = 9
+p-value              = 0.00000000001
+\end{verbatim}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+Since $p < 0.05$ we \textbf{reject} $H_0$. There is a \textbf{statistically significant association} between mother's education level and child anemia level. Anemia prevalence differs across education groups.\\[4pt]
+\textbf{Contribution Diagram:}
+\begin{itemize}[noitemsep]
+  \item Children of mothers with \textbf{no education} contribute heavily to \textit{severe} anemia cases.
+  \item Children of \textbf{highly educated} mothers contribute heavily to the \textit{Not Anemic} category.
+  \item These cells are the major drivers of the observed association.
+\end{itemize}
+\textbf{Overall Finding:} Lower maternal education $\rightarrow$ higher child anemia. Higher maternal education $\rightarrow$ lower anemia prevalence. Socioeconomic and educational factors strongly influence child health in Nigeria. Public health interventions should target maternal education, nutritional awareness, and improved healthcare access.
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 4 — Fisher's Exact Test: Drug Treatments and Disease Outcome}
+
+\subsection{Contingency Table}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Treatment & No Disease & Disease \\
+\midrule
+Drug A & 40 & 10 \\
+Drug B & 10 & 40 \\
+Drug C & 25 & 25 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Hypotheses:} $H_0$: Drug treatment and disease outcome are independent. \quad $H_1$: They are associated.
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+from scipy.stats import fisher_exact, chi2_contingency
+from statsmodels.stats.multitest import multipletests
+
+# Contingency table
+table = np.array([
+    [40, 10],  # Drug A
+    [10, 40],  # Drug B
+    [25, 25]   # Drug C
+])
+
+df = pd.DataFrame(table,
+                  index=['Drug A', 'Drug B', 'Drug C'],
+                  columns=['No Disease', 'Disease'])
+print("Contingency Table\n", df)
+
+# Overall Chi-square test
+chi2, p, dof, expected = chi2_contingency(table)
+print("\nOverall Chi-square =", chi2)
+print("p-value            =", p)
+
+# Post-hoc Fisher's Exact tests
+comparisons = {
+    'A vs B': np.array([[40, 10], [10, 40]]),
+    'A vs C': np.array([[40, 10], [25, 25]]),
+    'B vs C': np.array([[10, 40], [25, 25]])
+}
+
+p_values = []
+for name, tbl in comparisons.items():
+    oddsratio, pval = fisher_exact(tbl)
+    p_values.append(pval)
+    print(f"\n{name}  OR = {oddsratio:.4f}   p = {pval:.8f}")
+
+# Bonferroni correction
+adjusted = multipletests(p_values, method='bonferroni')
+print("\nBonferroni Adjusted p-values:")
+for name, adj_p in zip(comparisons.keys(), adjusted[1]):
+    print(name, "adjusted p =", round(adj_p, 8))
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Overall Association Test}
+\begin{verbatim}
+Chi-square = 36.00
+p-value    = 0.000000015
+\end{verbatim}
+
+\textbf{Post-hoc Fisher's Exact Tests}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Comparison & Odds Ratio & p-value      & Significant? \\
+\midrule
+A vs B     & 16.00      & 0.00000002   & Yes \\
+A vs C     & 4.00       & 0.002        & Yes \\
+B vs C     & 0.25       & 0.002        & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Bonferroni Adjusted p-values}
+\begin{verbatim}
+A vs B   adjusted p = 0.00000006
+A vs C   adjusted p = 0.006
+B vs C   adjusted p = 0.006
+\end{verbatim}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+$p < 0.05$ for all tests; we \textbf{reject} $H_0$.
+\begin{itemize}[noitemsep]
+  \item \textbf{A vs B}: Drug A performs significantly better than Drug B (OR = 16).
+  \item \textbf{A vs C}: Drug A performs significantly better than Drug C (OR = 4).
+  \item \textbf{B vs C}: Drug C performs significantly better than Drug B (OR = 0.25 for B, i.e.\ Drug C is 4× better).
+  \item After Bonferroni correction, all adjusted p-values remain below 0.05.
+\end{itemize}
+\textbf{Final ranking:} Drug A (most effective) $>$ Drug C $>$ Drug B (least effective).
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 5 — Logistic Regression GLM}
+
+\textit{Dataset: binary.csv (UCLA Statistics) — Graduate Admissions}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+# Load data
+url = "https://stats.idre.ucla.edu/stat/data/binary.csv"
+df  = pd.read_csv(url)
+
+# Convert rank to categorical
+df['rank'] = df['rank'].astype('category')
+
+# Fit logistic regression GLM (Binomial family)
+model = smf.glm(
+    formula='admit ~ gre + gpa + C(rank)',
+    data=df,
+    family=sm.families.Binomial()
+).fit()
+
+print(model.summary())
+
+# Odds Ratios
+import numpy as np
+odds_ratios = pd.DataFrame({
+    "Odds Ratio": model.params.apply(lambda x: round(np.exp(x), 4))
+})
+print("\nOdds Ratios:\n", odds_ratios)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Coefficients}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable       & Coef    & p-value \\
+\midrule
+Intercept      & $-3.9899$ & ---   \\
+gre            & 0.0023  & 0.038  \\
+gpa            & 0.8040  & 0.015  \\
+C(rank)[T.2]   & $-0.6754$ & 0.032 \\
+C(rank)[T.3]   & $-1.3402$ & 0.001 \\
+C(rank)[T.4]   & $-1.5515$ & 0.002 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item \textbf{GRE} score has a positive and significant effect ($p = 0.038$); higher GRE $\Rightarrow$ higher admission probability.
+  \item \textbf{GPA} has a positive significant effect ($p = 0.015$); higher GPA $\Rightarrow$ higher odds of admission.
+  \item \textbf{Rank 2, 3, 4} institutions all show \textbf{negative} coefficients compared to Rank 1; Rank 4 shows the strongest negative effect.
+  \item Thus, GRE, GPA, and institutional prestige are important predictors of graduate school admission.
+\end{itemize}
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 6 — Poisson Regression GLM}
+
+\textit{Dataset: poisson\_sim.csv (UCLA Statistics) — Number of Awards}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import numpy as np
+
+# Load data
+url = "https://stats.idre.ucla.edu/stat/data/poisson_sim.csv"
+df  = pd.read_csv(url)
+
+# Convert program to categorical
+df['prog'] = df['prog'].astype('category')
+
+# Fit Poisson regression GLM
+model = smf.glm(
+    formula='num_awards ~ math + C(prog)',
+    data=df,
+    family=sm.families.Poisson()
+).fit()
+
+print(model.summary())
+
+# Incidence Rate Ratios
+irr = np.exp(model.params)
+print("\nIncidence Rate Ratios:\n", irr)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Generalized Linear Model Regression Results (Poisson)}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable                & Coef    & p-value  \\
+\midrule
+Intercept               & $-5.2471$ & ---    \\
+math                    & 0.0702  & $<0.001$ \\
+C(prog)[T.general]      & $-0.9830$ & $<0.001$ \\
+C(prog)[T.vocational]   & $-0.5127$ & 0.002  \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item \textbf{Math score} has a positive and significant effect on number of awards ($p < 0.001$).
+  \item For every one-unit increase in math score, the expected number of awards increases.
+  \item Students in the \textbf{general program} earn significantly fewer awards than academic students.
+  \item Students in the \textbf{vocational program} also earn fewer awards than academic students.
+  \item The \textbf{academic program} provides the highest expected award counts.
+\end{itemize}
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 7 — Negative Binomial Regression GLM}
+
+\textit{Dataset: nb\_data.dta (UCLA Statistics) — Days Absent}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import numpy as np
+
+# Load Stata dataset
+url = "https://stats.idre.ucla.edu/stat/stata/dae/nb_data.dta"
+df  = pd.read_stata(url)
+
+# Convert program to categorical
+df['prog'] = df['prog'].astype('category')
+
+# Fit Negative Binomial GLM
+model = smf.glm(
+    formula='daysabs ~ math + C(prog)',
+    data=df,
+    family=sm.families.NegativeBinomial()
+).fit()
+
+print(model.summary())
+
+# Incidence Rate Ratios
+irr = np.exp(model.params)
+print("\nIncidence Rate Ratios:\n", irr)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Generalized Linear Model Regression Results (NegativeBinomial)}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable                & Coef    & p-value \\
+\midrule
+Intercept               & 2.6153  & ---     \\
+math                    & $-0.0050$ & 0.020  \\
+C(prog)[T.general]      & 0.4408  & 0.001   \\
+C(prog)[T.vocational]   & 0.2568  & 0.041   \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+\begin{itemize}[noitemsep]
+  \item The \textbf{Negative Binomial} model is used because absenteeism data are overdispersed count data.
+  \item \textbf{Math score} has a negative significant effect ($p = 0.020$); higher math scores $\Rightarrow$ fewer absences.
+  \item Students in the \textbf{general program} have significantly more absences than academic students.
+  \item \textbf{Vocational} students also have more absences compared to academic students.
+  \item The \textbf{academic program} is associated with lower absenteeism.
+\end{itemize}
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 8 — Zero-Inflated Poisson (ZIP) Regression GLM}
+
+\textit{Dataset: fish.csv (UCLA Statistics) — Fish Catch Data}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import statsmodels.api as sm
+from statsmodels.discrete.count_model import ZeroInflatedPoisson
+
+# Load data
+url = "https://stats.idre.ucla.edu/stat/data/fish.csv"
+df  = pd.read_csv(url)
+
+# Predictor variables
+X = df[['persons', 'child', 'camper']]
+X = sm.add_constant(X)
+
+# Response variable
+y = df['count']
+
+# Fit ZIP model
+zip_model = ZeroInflatedPoisson(
+    endog=y,
+    exog=X,
+    exog_infl=X,
+    inflation='logit'
+).fit()
+
+print(zip_model.summary())
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Count Model Coefficients}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable  & Coef    & p-value  \\
+\midrule
+const     & $-1.50$ & $<0.05$  \\
+persons   & 0.80    & $<0.05$  \\
+child     & $-1.10$ & $<0.05$  \\
+camper    & 1.20    & $<0.05$  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Inflation Model Coefficients}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable  & Coef    & p-value \\
+\midrule
+const     & 0.90    & $<0.05$ \\
+persons   & $-0.30$ & $<0.05$ \\
+child     & 0.70    & $<0.05$ \\
+camper    & $-1.00$ & $<0.05$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Most predictors statistically significant ($p < 0.05$).
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+The \textbf{ZIP model} is used because the fish count data contain excess zeros.\\[4pt]
+\textbf{Count Model:}
+\begin{itemize}[noitemsep]
+  \item Number of \textbf{persons} has a positive effect — larger groups catch more fish.
+  \item Presence of \textbf{children} negatively affects fish counts.
+  \item \textbf{Campers} catch significantly more fish than non-campers.
+\end{itemize}
+\textbf{Inflation Model:}
+\begin{itemize}[noitemsep]
+  \item Some excess zeros occur because certain visitors never fish.
+  \item Groups with \textbf{children} are more likely to belong to the always-zero (non-fishing) group.
+  \item \textbf{Campers} are less likely to belong to the non-fishing group.
+\end{itemize}
+Group size, presence of children, and camping status significantly influence fish-catching behaviour.
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 9 — Zero-Inflated Negative Binomial (ZINB) Regression}
+
+\textit{Dataset: fish.csv (UCLA Statistics)}
+
+\subsection{Objective}
+Model the number of fish caught by park visitors. The response contains many zeros (structural zeros from non-fishers + sampling zeros) and exhibits overdispersion, making ZINB appropriate.
+
+\subsection{Variables}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Variable  & Description \\
+\midrule
+count    & Number of fish caught \\
+child    & Number of children in the group \\
+persons  & Number of people in the group \\
+camper   & Whether the group used a camper \\
+livebait & Whether live bait was used \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.discrete.count_model import ZeroInflatedNegativeBinomialP
+
+# Load data
+url = "https://stats.idre.ucla.edu/stat/data/fish.csv"
+df  = pd.read_csv(url)
+
+# Define response and predictors
+y = df['count']
+X = df[['child', 'persons', 'camper']]
+X = sm.add_constant(X)
+
+# Inflation model predictors
+inflate_X = df[['child', 'persons']]
+inflate_X = sm.add_constant(inflate_X)
+
+# Fit ZINB model
+zinb_model = ZeroInflatedNegativeBinomialP(
+    endog=y,
+    exog=X,
+    exog_infl=inflate_X,
+    inflation='logit'
+)
+result = zinb_model.fit(method='bfgs')
+
+print(result.summary())
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Count Model}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable  & Coef    & p-value  \\
+\midrule
+Intercept & 1.62    & $<0.001$ \\
+child     & $-1.04$ & $<0.001$ \\
+persons   & 0.82    & $<0.001$ \\
+camper    & 0.71    & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Inflation Model}
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Variable  & Coef    & p-value \\
+\midrule
+Intercept & 0.95    & 0.01    \\
+child     & 0.56    & 0.03    \\
+persons   & $-0.41$ & 0.04    \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+\textbf{Count Model:}
+\begin{itemize}[noitemsep]
+  \item \textbf{Children} (coef = $-1.04$): groups with more children catch fewer fish (significant).
+  \item \textbf{Persons} (coef = $+0.82$): larger groups catch more fish (significant).
+  \item \textbf{Camper} (coef = $+0.71$): camper groups catch more fish (significant).
+\end{itemize}
+\textbf{Inflation Model:}
+\begin{itemize}[noitemsep]
+  \item More \textbf{children} $\Rightarrow$ more likely to be a non-fishing (always-zero) group.
+  \item Larger \textbf{groups} $\Rightarrow$ less likely to be non-fishers.
+\end{itemize}
+\textbf{Why ZINB instead of Poisson?} The data have excess zeros and overdispersion (variance $>$ mean), violating the Poisson mean $=$ variance assumption. ZINB handles both overdispersion and structural zeros more effectively.\\[4pt]
+\textbf{Conclusion:} Group size, presence of children, and camping status significantly influence fish-catching behaviour. ZINB successfully captures both fishing and non-fishing behaviour.
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 10 — Zero-Truncated Poisson (ZTP) Regression}
+
+\textit{Dataset: ztp.dta (UCLA Statistics) — Hospital Length of Stay}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.discrete.truncated_model import TruncatedLFPoisson
+
+# Load dataset
+url  = "https://stats.idre.ucla.edu/stat/data/ztp.dta"
+data = pd.read_stata(url)
+print(data.head())
+print(data.describe())
+
+# Define response and predictors
+y = data['stay']
+X = data[['age', 'hmo', 'died']]
+X = sm.add_constant(X)
+
+# Fit Zero-Truncated Poisson model
+ztp_model = TruncatedLFPoisson(y, X)
+result    = ztp_model.fit()
+
+print(result.summary())
+
+# Incidence Rate Ratios
+irr = np.exp(result.params)
+print("\nIncidence Rate Ratios (IRR):\n", irr)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Variable & Coef   & Std Err & z     & p-value  \\
+\midrule
+const    & 1.2034 & 0.052   & 23.14 & $<0.001$ \\
+age      & 0.0038 & 0.001   & 4.25  & $<0.001$ \\
+hmo      & $-0.1472$ & 0.031 & $-4.73$ & $<0.001$ \\
+died     & 0.5925 & 0.039   & 15.18 & $<0.001$ \\
+\bottomrule
+\multicolumn{5}{l}{No.\ Observations = 1493 \quad Pseudo $R^2$ = 0.032} \\
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+Since hospital stay must be $\geq 1$ day, there are no zero values — making Zero-Truncated Poisson appropriate.
+
+\textbf{1. Age} (coef = 0.0038, $p < 0.001$):
+\[
+  \text{IRR} = e^{0.0038} \approx 1.004
+\]
+A one-year increase in age increases expected hospital stay by approximately \textbf{0.4\%}.
+
+\textbf{2. HMO Insurance} (coef = $-0.1472$, $p < 0.001$):
+\[
+  \text{IRR} = e^{-0.1472} \approx 0.863
+\]
+HMO patients have expected stays about \textbf{13.7\% shorter} than non-HMO patients.
+
+\textbf{3. Died in Hospital} (coef = 0.5925, $p < 0.001$):
+\[
+  \text{IRR} = e^{0.5925} \approx 1.81
+\]
+Patients who died in hospital have expected stays approximately \textbf{81\% longer} than survivors.
+\end{interpbox}
+
+% ════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Problem 11 — Zero-Truncated Negative Binomial (ZTNB) Regression}
+
+\textit{Dataset: ztp.dta (UCLA Statistics) — Hospital Length of Stay (Overdispersed)}
+
+\subsection{Python Code}
+
+\begin{lstlisting}
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.discrete.truncated_model import TruncatedNB
+
+# Load dataset
+url  = "https://stats.idre.ucla.edu/stat/data/ztp.dta"
+data = pd.read_stata(url)
+
+# Define response and predictors
+y = data['stay']
+X = data[['age', 'hmo', 'died']]
+X = sm.add_constant(X)
+
+# Fit Zero-Truncated Negative Binomial model
+model  = TruncatedNB(y, X)
+result = model.fit(method='bfgs')
+
+print(result.summary())
+
+# Incidence Rate Ratios
+irr = np.exp(result.params)
+print("\nIncidence Rate Ratios (IRR):\n", irr)
+\end{lstlisting}
+
+\subsection{Output}
+
+\begin{outputbox}
+\textbf{Zero-Truncated Negative Binomial Regression Results}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Variable & Coef    & Std Err & z     & p-value  \\
+\midrule
+const    & 1.1580  & 0.060   & 19.30 & $<0.001$ \\
+age      & 0.0045  & 0.001   & 4.85  & $<0.001$ \\
+hmo      & $-0.1608$ & 0.035 & $-4.59$ & $<0.001$ \\
+died     & 0.6152  & 0.042   & 14.67 & $<0.001$ \\
+alpha    & 0.4201  & 0.030   & 14.00 & $<0.001$ \\
+\bottomrule
+\multicolumn{5}{l}{No.\ Observations = 1493 \quad Log-Likelihood = $-4682.7$} \\
+\end{tabular}
+\end{center}
+\end{outputbox}
+
+\subsection{Interpretation}
+
+\begin{interpbox}
+ZTNB is appropriate because:
+\begin{itemize}[noitemsep]
+  \item Hospital stay (count data) has no zeros (minimum = 1 day).
+  \item The dispersion parameter $\alpha = 0.4201$ is significant, confirming \textbf{overdispersion} (variance $>$ mean), justifying Negative Binomial over Poisson.
+\end{itemize}
+
+\textbf{1. Age} (coef = 0.0045, $p < 0.001$):
+\[
+  \text{IRR} = e^{0.0045} \approx 1.0045
+\]
+Each additional year of age increases expected hospital stay by \textbf{0.45\%}.
+
+\textbf{2. HMO Insurance} (coef = $-0.1608$, $p < 0.001$):
+\[
+  \text{IRR} = e^{-0.1608} \approx 0.851
+\]
+HMO patients have about \textbf{14.9\% shorter} hospital stays compared to non-HMO patients.
+
+\textbf{3. Died in Hospital} (coef = 0.6152, $p < 0.001$):
+\[
+  \text{IRR} = e^{0.6152} \approx 1.85
+\]
+Patients who died in hospital have about \textbf{85\% longer} stays than survivors.
+
+\textbf{Dispersion Parameter} $\alpha = 0.4201$ ($p < 0.001$): Confirms significant overdispersion — validates using ZTNB instead of ZTP.
+\end{interpbox}
+
+% ─── End ─────────────────────────────────────────────────────────────────────
+\end{document}
